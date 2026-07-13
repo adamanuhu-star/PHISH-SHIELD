@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHISH-SHIELD | Phishing Email Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+<base target="_blank">
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+    <div class="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-red-400 tracking-tight">PHISH-SHIELD</h1>
+            <p class="text-slate-500 text-sm mt-2">Phishing Email Detector & Social Engineering Analyzer</p>
+        </header>
+
+        <div class="max-w-4xl mx-auto space-y-6">
+            <!-- Email Input -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <label class="text-xs text-slate-500 uppercase tracking-wider">Email Content</label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="loadExample('phishing')" class="bg-red-900/30 border border-red-800 text-red-400 text-xs px-3 py-1 rounded hover:bg-red-900/50 transition-colors">Load Phishing Example</button>
+                        <button onclick="loadExample('legit')" class="bg-emerald-900/30 border border-emerald-800 text-emerald-400 text-xs px-3 py-1 rounded hover:bg-emerald-900/50 transition-colors">Load Legit Example</button>
+                        <button onclick="clearEmail()" class="bg-slate-800 text-slate-400 text-xs px-3 py-1 rounded hover:bg-slate-700 transition-colors">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Sender Field -->
+                <div class="mb-3">
+                    <label class="text-xs text-slate-500 mb-1 block">From:</label>
+                    <input type="text" id="sender-input" placeholder="sender@example.com" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200 focus:border-red-500 focus:outline-none font-mono"
+                        oninput="analyzeEmail()">
+                </div>
+
+                <!-- Subject Field -->
+                <div class="mb-3">
+                    <label class="text-xs text-slate-500 mb-1 block">Subject:</label>
+                    <input type="text" id="subject-input" placeholder="Email subject line..." 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-200 focus:border-red-500 focus:outline-none"
+                        oninput="analyzeEmail()">
+                </div>
+
+                <!-- Body Field -->
+                <div class="mb-3">
+                    <label class="text-xs text-slate-500 mb-1 block">Body:</label>
+                    <textarea id="body-input" rows="8" placeholder="Paste email content here..." 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-200 focus:border-red-500 focus:outline-none resize-none"
+                        oninput="analyzeEmail()"></textarea>
+                </div>
+
+                <button onclick="analyzeEmail(true)" class="w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-sm font-semibold transition-colors">
+                    🔍 Deep Scan Email
+                </button>
+            </div>
+
+            <!-- Results Panel -->
+            <div id="results-panel" class="hidden space-y-6">
+                <!-- Main Score -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                        <div>
+                            <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-1">Phishing Risk Score</h3>
+                            <div id="risk-score" class="text-5xl font-bold text-slate-400">0/100</div>
+                        </div>
+                        <div id="risk-badge" class="px-4 py-2 rounded-full text-sm font-bold border">
+                            UNKNOWN
+                        </div>
+                    </div>
+                    <div class="bg-slate-950 rounded-full h-4 overflow-hidden">
+                        <div id="risk-bar" class="h-full rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p id="risk-summary" class="text-sm text-slate-400 mt-3">Enter email content to analyze</p>
+                </div>
+
+                <!-- Threat Indicators -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-4">Threat Indicators Detected</h3>
+                    <div id="indicators-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Analysis Breakdown -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Sender Analysis -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                        <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-3">Sender Analysis</h3>
+                        <div id="sender-analysis" class="space-y-2 text-sm"></div>
+                    </div>
+
+                    <!-- Content Analysis -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                        <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-3">Content Analysis</h3>
+                        <div id="content-analysis" class="space-y-2 text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- URL Scanner -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-4">URL Analysis</h3>
+                    <div id="url-analysis" class="space-y-2"></div>
+                </div>
+
+                <!-- Social Engineering Tactics -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-4">Social Engineering Tactics</h3>
+                    <div id="se-tactics" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                    <h3 class="text-xs text-slate-500 uppercase tracking-wider mb-3">Security Recommendations</h3>
+                    <ul id="recommendations" class="space-y-2 text-sm text-slate-400"></ul>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-12 text-xs text-slate-600 pb-6">
+            Educational tool for phishing awareness • No data transmitted externally
+        </footer>
+    </div>
+
+    <script>
+        const phishingPatterns = {
+            urgency: ['urgent', 'immediately', 'asap', 'right now', 'act now', 'limited time', 'expires soon', 'final notice', 'account suspended', 'verify now'],
+            threats: ['suspended', 'terminated', 'closed', 'locked', 'blocked', 'restricted', 'unauthorized', 'suspicious activity', 'security breach', 'compromised'],
+            rewards: ['won', 'winner', 'prize', 'reward', 'gift', 'free', 'bonus', 'claim', 'congratulations', 'selected'],
+            credentials: ['verify your account', 'confirm password', 'update payment', 'billing information', 'credit card', 'ssn', 'social security', 'bank account'],
+            impersonation: ['irs', 'amazon', 'paypal', 'apple', 'microsoft', 'netflix', 'bank', 'fedex', 'ups', 'dhl', 'support team', 'security team'],
+            grammar: ['dear customer', 'dear user', 'valued customer', 'kindly', 'please to', 'we apologies', 'your account will be'],
+            links: ['click here', 'verify here', 'login here', 'update here', 'confirm here', 'bit.ly', 'tinyurl', 't.co'],
+            senderSpoof: ['noreply', 'no-reply', 'donotreply', 'admin', 'security', 'support', 'alert'],
+        };
+
+        const suspiciousTLDs = ['.tk', '.ml', '.ga', '.cf', '.gq', '.top', '.xyz', '.club', '.online', '.site'];
+
+        const seTactics = [
+            { name: 'Authority', icon: '👮', desc: 'Pretends to be official' },
+            { name: 'Urgency', icon: '⏰', desc: 'Creates time pressure' },
+            { name: 'Fear', icon: '😰', desc: 'Threatens consequences' },
+            { name: 'Greed', icon: '💰', desc: 'Promises rewards' },
+            { name: 'Curiosity', icon: '👀', desc: 'Provokes interest' },
+            { name: 'Trust', icon: '🤝', desc: 'Mimics known brands' },
+            { name: 'Helpfulness', icon: '🆘', desc: 'Offers assistance' },
+            { name: 'Scarcity', icon: '⚠️', desc: 'Limited availability' },
+        ];
+
+        function loadExample(type) {
+            if (type === 'phishing') {
+                document.getElementById('sender-input').value = 'security@amaz0n-security.com';
+                document.getElementById('subject-input').value = 'URGENT: Your Amazon Account Has Been Suspended - Verify Now';
+                document.getElementById('body-input').value = `Dear Customer,
+
+We have detected suspicious activity on your Amazon account. Your account has been temporarily suspended for security reasons.
+
+To restore access, you must verify your account information within 24 hours or your account will be permanently terminated.
+
+Click here to verify: https://amaz0n-verify-account.tk/secure-login
+
+Please confirm your password, credit card details, and billing address immediately.
+
+Thank you for your cooperation.
+Amazon Security Team`;
+            } else {
+                document.getElementById('sender-input').value = 'noreply@github.com';
+                document.getElementById('subject-input').value = 'Your weekly GitHub digest';
+                document.getElementById('body-input').value = `Hi there,
+
+Here's your weekly summary of activity from repositories you watch.
+
+- 3 new issues in adamanuhu-star/cybersec-dashboard
+- 1 pull request merged in adamanuhu-star/crypto-vault
+- 2 stars earned on adamanuhu-star/net-sniff
+
+View your full digest: https://github.com/notifications
+
+You can manage your email preferences in your GitHub settings.
+
+Thanks,
+The GitHub Team`;
+            }
+            analyzeEmail(true);
+        }
+
+        function clearEmail() {
+            document.getElementById('sender-input').value = '';
+            document.getElementById('subject-input').value = '';
+            document.getElementById('body-input').value = '';
+            document.getElementById('results-panel').classList.add('hidden');
+        }
+
+        function analyzeEmail(force = false) {
+            const sender = document.getElementById('sender-input').value.toLowerCase();
+            const subject = document.getElementById('subject-input').value.toLowerCase();
+            const body = document.getElementById('body-input').value.toLowerCase();
+            const fullText = subject + ' ' + body;
+
+            if (!force && (!sender && !subject && !body)) {
+                document.getElementById('results-panel').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('results-panel').classList.remove('hidden');
+
+            let score = 0;
+            const indicators = [];
+            const detectedTactics = new Set();
+
+            // Urgency detection
+            const urgencyCount = phishingPatterns.urgency.filter(w => fullText.includes(w)).length;
+            if (urgencyCount > 0) {
+                score += urgencyCount * 8;
+                indicators.push({ type: 'urgency', text: `Urgency keywords detected (${urgencyCount})`, severity: 'high' });
+                detectedTactics.add('Urgency');
+            }
+
+            // Threat detection
+            const threatCount = phishingPatterns.threats.filter(w => fullText.includes(w)).length;
+            if (threatCount > 0) {
+                score += threatCount * 10;
+                indicators.push({ type: 'threat', text: `Threat language detected (${threatCount})`, severity: 'critical' });
+                detectedTactics.add('Fear');
+            }
+
+            // Reward detection
+            const rewardCount = phishingPatterns.rewards.filter(w => fullText.includes(w)).length;
+            if (rewardCount > 0) {
+                score += rewardCount * 7;
+                indicators.push({ type: 'reward', text: `Reward/prize language detected (${rewardCount})`, severity: 'medium' });
+                detectedTactics.add('Greed');
+            }
+
+            // Credential requests
+            const credCount = phishingPatterns.credentials.filter(w => fullText.includes(w)).length;
+            if (credCount > 0) {
+                score += credCount * 12;
+                indicators.push({ type: 'credential', text: `Requests sensitive information (${credCount})`, severity: 'critical' });
+                detectedTactics.add('Trust');
+            }
+
+            // Brand impersonation
+            const brandCount = phishingPatterns.impersonation.filter(w => {
+                const brandRegex = new RegExp('\\b' + w + '\\b', 'i');
+                return brandRegex.test(fullText) || brandRegex.test(sender);
+            }).length;
+            if (brandCount > 0) {
+                score += brandCount * 6;
+                indicators.push({ type: 'impersonation', text: `Possible brand impersonation (${brandCount})`, severity: 'high' });
+                detectedTactics.add('Authority');
+                detectedTactics.add('Trust');
+            }
+
+            // Poor grammar
+            const grammarCount = phishingPatterns.grammar.filter(w => fullText.includes(w)).length;
+            if (grammarCount > 0) {
+                score += grammarCount * 4;
+                indicators.push({ type: 'grammar', text: `Suspicious phrasing detected (${grammarCount})`, severity: 'low' });
+            }
+
+            // Suspicious links
+            const linkCount = phishingPatterns.links.filter(w => fullText.includes(w)).length;
+            if (linkCount > 0) {
+                score += linkCount * 9;
+                indicators.push({ type: 'link', text: `Suspicious link patterns (${linkCount})`, severity: 'high' });
+            }
+
+            // URL analysis
+            const urls = extractURLs(body);
+            let suspiciousUrls = 0;
+            urls.forEach(url => {
+                if (suspiciousTLDs.some(tld => url.includes(tld))) {
+                    score += 15;
+                    suspiciousUrls++;
+                    indicators.push({ type: 'url', text: `Suspicious TLD in URL: ${url}`, severity: 'critical' });
+                }
+                if (url.includes('0') || url.includes('1') || /\d{4,}/.test(url)) {
+                    score += 5;
+                    indicators.push({ type: 'url', text: `Numeric/encoded URL: ${url}`, severity: 'medium' });
+                }
+            });
+
+            // Sender analysis
+            const senderScore = analyzeSender(sender);
+            score += senderScore.points;
+            if (senderScore.indicators.length > 0) {
+                senderScore.indicators.forEach(ind => indicators.push(ind));
+            }
+
+            // Subject line analysis
+            if (subject.includes('re:') && !body.includes('previous')) {
+                score += 5;
+                indicators.push({ type: 'subject', text: 'Fake reply thread (Re: without context)', severity: 'medium' });
+            }
+
+            if (/\d{4,}/.test(subject)) {
+                score += 3;
+                indicators.push({ type: 'subject', text: 'Excessive numbers in subject', severity: 'low' });
+            }
+
+            // Cap score
+            score = Math.min(100, score);
+
+            // Update UI
+            updateRiskDisplay(score);
+            updateIndicators(indicators);
+            updateSenderAnalysis(sender, senderScore);
+            updateContentAnalysis(fullText, indicators);
+            updateUrlAnalysis(urls, suspiciousUrls);
+            updateSETactics(detectedTactics);
+            updateRecommendations(score, indicators);
+        }
+
+        function extractURLs(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.match(urlRegex) || [];
+        }
+
+        function analyzeSender(sender) {
+            let points = 0;
+            const indicators = [];
+
+            if (!sender.includes('@')) return { points: 0, indicators: [] };
+
+            const domain = sender.split('@')[1];
+            const local = sender.split('@')[0];
+
+            // Spoofed sender patterns
+            if (phishingPatterns.senderSpoof.some(w => local.includes(w))) {
+                points += 8;
+                indicators.push({ type: 'sender', text: 'Generic/no-reply sender address', severity: 'medium' });
+            }
+
+            // Suspicious TLD in sender
+            if (suspiciousTLDs.some(tld => domain.includes(tld))) {
+                points += 20;
+                indicators.push({ type: 'sender', text: `Suspicious domain TLD: ${domain}`, severity: 'critical' });
+            }
+
+            // Homograph attack (lookalike characters)
+            if (/[0о]/.test(domain) || /rn/.test(domain)) {
+                points += 15;
+                indicators.push({ type: 'sender', text: 'Possible homograph attack (lookalike domain)', severity: 'critical' });
+            }
+
+            // Free email for business
+            if (['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'].some(d => domain.includes(d))) {
+                points += 5;
+                indicators.push({ type: 'sender', text: 'Free email provider used for business communication', severity: 'low' });
+            }
+
+            // Mismatched display name
+            if (sender.includes('amazon') && !domain.includes('amazon.com')) {
+                points += 25;
+                indicators.push({ type: 'sender', text: 'Brand name in address but not in domain', severity: 'critical' });
+            }
+
+            return { points, indicators };
+        }
+
+        function updateRiskDisplay(score) {
+            document.getElementById('risk-score').textContent = score + '/100';
+            const bar = document.getElementById('risk-bar');
+            const badge = document.getElementById('risk-badge');
+            const summary = document.getElementById('risk-summary');
+
+            bar.style.width = score + '%';
+
+            if (score < 20) {
+                bar.className = 'h-full rounded-full transition-all duration-1000 bg-emerald-500';
+                badge.className = 'px-4 py-2 rounded-full text-sm font-bold border bg-emerald-900/30 text-emerald-400 border-emerald-800';
+                badge.textContent = 'SAFE';
+                summary.textContent = 'This email appears legitimate. No significant phishing indicators detected.';
+            } else if (score < 40) {
+                bar.className = 'h-full rounded-full transition-all duration-1000 bg-yellow-500';
+                badge.className = 'px-4 py-2 rounded-full text-sm font-bold border bg-yellow-900/30 text-yellow-400 border-yellow-800';
+                badge.textContent = 'LOW RISK';
+                summary.textContent = 'Minor suspicious elements detected. Exercise basic caution.';
+            } else if (score < 60) {
+                bar.className = 'h-full rounded-full transition-all duration-1000 bg-orange-500';
+                badge.className = 'px-4 py-2 rounded-full text-sm font-bold border bg-orange-900/30 text-orange-400 border-orange-800';
+                badge.textContent = 'SUSPICIOUS';
+                summary.textContent = 'Multiple phishing indicators detected. Verify sender independently.';
+            } else if (score < 80) {
+                bar.className = 'h-full rounded-full transition-all duration-1000 bg-red-500';
+                badge.className = 'px-4 py-2 rounded-full text-sm font-bold border bg-red-900/30 text-red-400 border-red-800';
+                badge.textContent = 'HIGH RISK';
+                summary.textContent = 'Strong phishing indicators. Do not click links or provide information.';
+            } else {
+                bar.className = 'h-full rounded-full transition-all duration-1000 bg-red-600';
+                badge.className = 'px-4 py-2 rounded-full text-sm font-bold border bg-red-900/50 text-red-300 border-red-700 animate-pulse';
+                badge.textContent = 'PHISHING';
+                summary.textContent = 'This is very likely a phishing email. Delete immediately and report.';
+            }
+        }
+
+        function updateIndicators(indicators) {
+            const container = document.getElementById('indicators-list');
+            const severityColors = {
+                critical: 'bg-red-900/30 border-red-800 text-red-400',
+                high: 'bg-orange-900/30 border-orange-800 text-orange-400',
+                medium: 'bg-yellow-900/30 border-yellow-800 text-yellow-400',
+                low: 'bg-slate-800 border-slate-700 text-slate-400'
+            };
+
+            container.innerHTML = indicators.map(ind => `
+                <div class="flex items-center gap-3 p-3 rounded-lg border ${severityColors[ind.severity]}">
+                    <span class="text-lg">${ind.severity === 'critical' ? '🔴' : ind.severity === 'high' ? '🟠' : ind.severity === 'medium' ? '🟡' : '⚪'}</span>
+                    <span class="text-sm">${ind.text}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateSenderAnalysis(sender, senderScore) {
+            const container = document.getElementById('sender-analysis');
+            const domain = sender.includes('@') ? sender.split('@')[1] : 'N/A';
+
+            container.innerHTML = `
+                <div class="flex justify-between"><span class="text-slate-500">Domain:</span><span class="font-mono text-slate-300">${domain}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Local Part:</span><span class="font-mono text-slate-300">${sender.includes('@') ? sender.split('@')[0] : 'N/A'}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Risk Points:</span><span class="font-mono ${senderScore.points > 15 ? 'text-red-400' : 'text-emerald-400'}">${senderScore.points}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Issues Found:</span><span class="font-mono text-slate-300">${senderScore.indicators.length}</span></div>
+            `;
+        }
+
+        function updateContentAnalysis(text, indicators) {
+            const container = document.getElementById('content-analysis');
+            const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+            const capsRatio = (text.replace(/[^A-Z]/g, '').length / Math.max(text.length, 1) * 100).toFixed(1);
+            const exclamationCount = (text.match(/!/g) || []).length;
+
+            container.innerHTML = `
+                <div class="flex justify-between"><span class="text-slate-500">Word Count:</span><span class="font-mono text-slate-300">${wordCount}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">ALL CAPS Ratio:</span><span class="font-mono ${capsRatio > 10 ? 'text-red-400' : 'text-slate-300'}">${capsRatio}%</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Exclamation Marks:</span><span class="font-mono ${exclamationCount > 2 ? 'text-red-400' : 'text-slate-300'}">${exclamationCount}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Total Indicators:</span><span class="font-mono text-slate-300">${indicators.length}</span></div>
+            `;
+        }
+
+        function updateUrlAnalysis(urls, suspiciousCount) {
+            const container = document.getElementById('url-analysis');
+
+            if (urls.length === 0) {
+                container.innerHTML = '<div class="text-sm text-slate-500">No URLs detected in email body</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="mb-2 text-sm text-slate-400">Found ${urls.length} URL(s), ${suspiciousCount} suspicious</div>
+                ${urls.map(url => `
+                    <div class="flex items-center gap-2 p-2 rounded bg-slate-950 border border-slate-800">
+                        <span class="text-xs">🔗</span>
+                        <span class="font-mono text-xs text-slate-300 truncate">${url}</span>
+                        ${suspiciousTLDs.some(tld => url.includes(tld)) ? '<span class="text-xs text-red-400 ml-auto">⚠️ SUSPICIOUS</span>' : '<span class="text-xs text-emerald-400 ml-auto">✓ OK</span>'}
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function updateSETactics(detected) {
+            const container = document.getElementById('se-tactics');
+
+            container.innerHTML = seTactics.map(tactic => {
+                const isDetected = detected.has(tactic.name);
+                return `
+                    <div class="p-3 rounded-lg border text-center transition-all ${isDetected ? 'bg-red-900/20 border-red-800' : 'bg-slate-950 border-slate-800 opacity-40'}">
+                        <div class="text-2xl mb-1">${tactic.icon}</div>
+                        <div class="text-xs font-semibold ${isDetected ? 'text-red-400' : 'text-slate-500'}">${tactic.name}</div>
+                        <div class="text-xs text-slate-600 mt-1">${tactic.desc}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateRecommendations(score, indicators) {
+            const container = document.getElementById('recommendations');
+            const recs = [];
+
+            if (score > 60) {
+                recs.push('Do NOT click any links in this email');
+                recs.push('Do NOT download any attachments');
+                recs.push('Do NOT reply or provide any personal information');
+                recs.push('Report this email to your security team or IT department');
+                recs.push('Delete this email immediately');
+            } else if (score > 30) {
+                recs.push('Verify the sender independently (do not use reply)');
+                recs.push('Hover over links to check the actual URL before clicking');
+                recs.push('Check for spelling errors and unusual formatting');
+                recs.push('Contact the company directly using their official website');
+            } else {
+                recs.push('This email appears safe, but always stay vigilant');
+                recs.push('When in doubt, verify unexpected emails independently');
+            }
+
+            if (indicators.some(i => i.type === 'credential')) {
+                recs.push('Legitimate companies never ask for passwords via email');
+            }
+
+            if (indicators.some(i => i.type === 'url')) {
+                recs.push('Use a URL scanner (VirusTotal) to check suspicious links');
+            }
+
+            container.innerHTML = recs.map(r => `<li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">•</span>${r}</li>`).join('');
+        }
+    </script>
+</body>
+</html>
