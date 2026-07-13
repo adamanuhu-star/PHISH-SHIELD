@@ -1,0 +1,33 @@
+# 🎯 PHISH-SHIELD
+
+A browser-based phishing email detector that analyzes social engineering tactics, flags suspicious URLs, and scores email risk in real-time.
+
+## 🚀 Live Demo
+
+https://adamanuhu-star.github.io/phish-shield
+
+## 📊 Features
+
+- **Social Engineering Detection** — Identifies urgency, fear, greed, and authority tactics
+- **Sender Analysis** — Spots spoofed domains, homograph attacks, suspicious TLDs
+- **URL Inspection** — Flags bit.ly links, suspicious TLDs, numeric domains
+- **Content Analysis** — Detects credential requests, poor grammar, excessive caps
+- **Risk Scoring** — 0-100 phishing probability with actionable recommendations
+- **TCP/IP Stack Visualization** — See how packets traverse network layers
+
+## 🛠️ Tech Stack
+
+- HTML5, Tailwind CSS, Vanilla JavaScript
+- No external dependencies
+- No data transmitted externally
+
+## 🎯 Security Concepts Demonstrated
+
+- **Social Engineering:** Understanding manipulation tactics used in phishing
+- **Email Authentication:** SPF, DKIM, DMARC awareness through sender analysis
+- **URL Analysis:** TLD reputation, homograph attacks, link obfuscation
+- **Threat Intelligence:** Pattern matching against known phishing indicators
+
+## 📄 License
+
+MIT — Educational purposes
